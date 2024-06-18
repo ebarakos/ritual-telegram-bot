@@ -9,7 +9,7 @@ build:
 	jq  ".containers[0].image = \"$(TAG)\"" config.json > updated_config.json && mv updated_config.json config.json
 
 run: build
-	docker run --env-file ./$(EXAMPLE_NAME).env -p 3000:3000 $(TAG)
+	docker run --env-file $(EXAMPLE_NAME).env -p 3000:3000 $(TAG)
 
 
 # You may need to set up a docker builder, to do so run:

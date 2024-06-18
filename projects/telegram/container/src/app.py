@@ -26,7 +26,7 @@ def create_app() -> Quart:
         """
         Utility endpoint to check if the service is running.
         """
-        return "Telegram with Env var"
+        return "Telegram Bot Example"
 
     @app.route("/service_output", methods=["POST"])
     async def messaging() -> dict[str, Any]:   
@@ -46,13 +46,16 @@ def create_app() -> Quart:
 
         match infernet_input:
             case InfernetInput(source=JobLocation.OFFCHAIN):
-                message: str = cast(dict[str, str], infernet_input.data)["message"]
+                message = cast(dict[str, Any], infernet_input.data).get("message")
             case InfernetInput(source=JobLocation.ONCHAIN):
                 # On-chain requests are sent as a generalized hex-string which we will
                 # decode to the appropriate format.
-                (message) = decode(
-                    ["string"], bytes.fromhex(cast(str, infernet_input.data))
-                )
+             
+                bytes_data = bytes.fromhex(infernet_input.data)
+                message = bytes_data.decode('utf-8')
+                # (message,) = decode(
+                #     ["string"], bytes.fromhex(cast(str, infernet_input.data))
+                # )
             case _:
                 raise ValueError("Invalid source")
         log.info("message: %s", message)
