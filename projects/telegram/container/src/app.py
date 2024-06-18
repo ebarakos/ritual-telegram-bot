@@ -8,10 +8,19 @@ from quart import Quart, request
 import logging
 import os
 from dotenv import load_dotenv
+import threading
 
 from typing import Any, cast
 
 load_dotenv()
+from telegram import ForceReply, Update
+from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
+
+
+async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
+    """Echo the user message."""
+    await update.message.reply_text(update.message.text)
+
 
 
 log = logging.getLogger(__name__)
@@ -26,7 +35,7 @@ def create_app() -> Quart:
         """
         Utility endpoint to check if the service is running.
         """
-        return "Telegram Bot Example"
+        return "Telegram Bot polling thread"
 
     @app.route("/service_output", methods=["POST"])
     async def messaging() -> dict[str, Any]:   
@@ -64,10 +73,11 @@ def create_app() -> Quart:
             updates = (await bot.get_updates())[0]
             # Retrieve chat_id
             await bot.send_message(text=message, chat_id=updates.message.chat_id)
-
-            
-    return app
-
+  
+    bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
+    bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
+    bot_app.run_polling(allowed_updates=Update.ALL_TYPES)
+    return app  
 
 if __name__ == "__main__":
     """
