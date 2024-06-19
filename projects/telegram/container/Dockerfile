@@ -24,5 +24,12 @@ RUN /root/.cargo/bin/uv pip install --system --no-cache -r requirements.txt
 
 COPY src src
 
-ENTRYPOINT ["hypercorn", "app:create_app()"]
-CMD ["-b", "0.0.0.0:3000"]
+ARG appname
+ARG port
+ENV APP_NAME=${appname}
+ENV PORT=${port}
+EXPOSE ${port}
+RUN echo '#!/bin/sh\nexec hypercorn "${APP_NAME}:create_app()" -b "0.0.0.0:${PORT}"' > /start.sh
+RUN chmod +x /start.sh
+
+ENTRYPOINT ["/start.sh"]

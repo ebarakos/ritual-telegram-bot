@@ -16,7 +16,7 @@ contract Deploy is Script {
 
         address registry = 0x663F3ad617193148711d28f5334eE4Ed07016602;
         // Create consumer
-        SaysGM saysGm = new SaysGM(registry);
+        SaysGM saysGm = new SaysGM(registry, deployerAddress);
         console2.log("Deployed SaysHello: ", address(saysGm));
 
         // Execute

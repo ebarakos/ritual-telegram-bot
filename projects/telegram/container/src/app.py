@@ -1,50 +1,92 @@
 from typing import Any
 
-from flask import Flask, request
 import telegram
 from eth_abi import decode, encode  # type: ignore
 from infernet_ml.utils.service_models import InfernetInput, JobLocation
+from infernet_client.node import NodeClient
+from infernet_client.chain.subscription import Subscription
+from infernet_client.chain.rpc import RPC
 from quart import Quart, request
 import logging
 import os
 from dotenv import load_dotenv
-import threading
-
+import random
 from typing import Any, cast
-
+from time import time
 load_dotenv()
 from telegram import ForceReply, Update
 from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 
-async def echo(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
-    """Echo the user message."""
-    await update.message.reply_text(update.message.text)
-
+# async def get_chat_id() -> str:
+#     global chat_id
+#     bot = telegram.Bot(TELEGRAM_TOKEN)
+#     updates = await bot.get_updates()
+#     if updates:
+#         chat_id = updates[-1].message.chat.id
+#         return chat_id
+#     else:
+#         print('No updates found')
+#         return None
 
 
 log = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
+ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
+CHAT_ID = os.getenv("CHAT_ID")
 
-
+    
 def create_app() -> Quart:
     app = Quart(__name__)
+    bot = telegram.Bot(TELEGRAM_TOKEN)
+    print(CHAT_ID)
     @app.route("/")
     def index() -> str:
         """
         Utility endpoint to check if the service is running.
         """
-        return "Telegram Bot polling thread"
+        return "Telegram Bot Solidity"
+    
+    @app.route("/new_message", methods=["POST"])
+    async def new_message() -> dict[str, Any]: 
+        req_data = await request.get_json()
+        message = req_data.get("message")
+        print(req_data)
+        async with bot:
+                    # await get_chat_id()
+                    await bot.send_message(text='received by delegated subscription '+ message, chat_id=CHAT_ID)
 
+        sub = Subscription(
+            owner="0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e",
+            active_at=0,
+            period=0,
+            frequency=1,
+            redundancy=1,
+            containers=["telegram"],
+            lazy=False,
+            verifier=ZERO_ADDRESS,
+            payment_amount=0,
+            payment_token=ZERO_ADDRESS,
+            wallet=ZERO_ADDRESS,
+        )
+
+        client = NodeClient("http://172.17.0.1:4000")
+        nonce = random.randint(0, 2**32 - 1)
+        await client.request_delegated_subscription(
+            subscription=sub,
+            rpc=RPC("http://172.17.0.1:8545"),
+            coordinator_address="0x2E983A1Ba5e8b38AAAeC4B440B9dDcFBf72E15d1",
+            expiry=int(time() + 10),
+            nonce=nonce,
+            private_key="0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
+            data={ "message" : "Message from chain,  " + message },
+        )
+       
+        return {"status": "ok"}
+    
     @app.route("/service_output", methods=["POST"])
-    async def messaging() -> dict[str, Any]:   
-        print(TELEGRAM_TOKEN)
-        bot = telegram.Bot(TELEGRAM_TOKEN)
-        # async with bot:
-            # Retrieve chat_id
-            # updates = (await bot.get_updates())[0]
-            # await bot.send_message(text='Hi!', chat_id=updates.message.chat_id)
+    async def service_output() -> dict[str, Any]:   
         req_data = await request.get_json()
         """
         InfernetInput has the format:
@@ -70,13 +112,8 @@ def create_app() -> Quart:
         log.info("message: %s", message)
 
         async with bot:
-            updates = (await bot.get_updates())[0]
-            # Retrieve chat_id
-            await bot.send_message(text=message, chat_id=updates.message.chat_id)
-  
-    bot_app = Application.builder().token(TELEGRAM_TOKEN).build()
-    bot_app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, echo))
-    bot_app.run_polling(allowed_updates=Update.ALL_TYPES)
+            await bot.send_message(text=message, chat_id=CHAT_ID)
+
     return app  
 
 if __name__ == "__main__":

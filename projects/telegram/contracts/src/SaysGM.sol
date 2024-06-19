@@ -3,14 +3,15 @@ pragma solidity ^0.8.13;
 
 import {console2} from "forge-std/console2.sol";
 import {CallbackConsumer} from "infernet-sdk/consumer/Callback.sol";
+import {Delegator} from "infernet-sdk/pattern/Delegator.sol";
 
-contract SaysGM is CallbackConsumer {
-    constructor(address registry) CallbackConsumer(registry) {}
+contract SaysGM is CallbackConsumer, Delegator {
+    constructor(address registry, address _signer) CallbackConsumer(registry) Delegator(_signer) {}
 
     function sayGM(string memory message) public {
         _requestCompute(
             "telegram",
-            bytes(message),
+            abi.encode(message),
             1, // redundancy
             address(0), // paymentToken
             0, // paymentAmount
