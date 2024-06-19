@@ -1,22 +1,11 @@
-from typing import Any
-
-import telegram
-from eth_abi import decode, encode  # type: ignore
-from infernet_ml.utils.service_models import InfernetInput, JobLocation
-from infernet_client.node import NodeClient
-from infernet_client.chain.subscription import Subscription
-from infernet_client.chain.rpc import RPC
-from quart import Quart, request
 import logging
 import os
-from dotenv import load_dotenv
-from typing import Any, cast
-from time import time
-load_dotenv()
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 import requests
-
+from quart import Quart
+from telegram import Update
+from telegram.ext import Application, ContextTypes, MessageHandler, filters
+from dotenv import load_dotenv
+load_dotenv()
 
 log = logging.getLogger(__name__)
 
@@ -32,7 +21,6 @@ async def send(update: Update, context: ContextTypes.DEFAULT_TYPE) -> None:
     response = requests.post(url, json=data)
     print('Status Code:', response.status_code)
     print('Response Text:', response.text)
-    # await update.message.reply_text(update.message.text)
 
 def create_app() -> Quart:
     app = Quart(__name__)

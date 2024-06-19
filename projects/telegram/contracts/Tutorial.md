@@ -1,7 +1,7 @@
 # `GM! 🤠`
 
-In this tutorial we'll make a very simple consumer contract called `SaysGm`.
-All this contract does is request compute from our `hello-world` container and
+In this tutorial we'll make a very simple consumer contract called `Telegram`.
+All this contract does is request compute from our `telegram` container and
 upon receiving a response, it prints everything to the console.
 
 > [!NOTE]
@@ -21,8 +21,8 @@ Create a new directory, and run `forge init` in it. This will create a new
 project with a `foundry.yaml` file in it.
 
 ```bash
-mkdir says-gm
-cd says-gm
+mkdir telegram-bot
+cd telegram-bot
 forge init
 ```
 
@@ -46,9 +46,9 @@ infernet-sdk/=lib/infernet-sdk/src
 This'll make it easier to import our dependencies. More explanation on
 remappings [here](https://book.getfoundry.sh/projects/dependencies?highlight=remappings#remapping-dependencies).
 
-### `SaysGm` contract
+### `Telegram` contract
 
-Under the `src/` directory, create a new file called `SaysGm.sol` with the following content:
+Under the `src/` directory, create a new file called `Telegram.sol` with the following content:
 
 ```solidity
 // SPDX-License-Identifier: BSD-3-Clause-Clear
@@ -57,16 +57,18 @@ pragma solidity ^0.8.13;
 import {console2} from "forge-std/console2.sol";
 import {CallbackConsumer} from "infernet-sdk/consumer/Callback.sol";
 
-contract SaysGM is CallbackConsumer {
+contract Telegram is CallbackConsumer {
     constructor(address registry) CallbackConsumer(registry) {}
 
-    function sayGM() public {
+    function sayMessage(string memory message) public {
         _requestCompute(
-            "hello-world",
-            bytes("Good morning!"),
-            20 gwei,
-            1_000_000,
-            1
+            "telegram",
+            abi.encode(message),
+            1, // redundancy
+            address(0), // paymentToken
+            0, // paymentAmount
+            address(0), // wallet
+            address(0) // prover
         );
     }
 
@@ -102,7 +104,7 @@ contract SaysGM is CallbackConsumer {
 }
 ```
 
-All this contract does is request compute from our `hello-world` container via the `_requestCompute` function.
+All this contract does is request compute from our `telegram` container via the `_requestCompute` function.
 An Infernet node will pick up this subscription, execute the compute, and deliver the result to our contract via
 the `_receiveCompute` function.
 
@@ -116,7 +118,7 @@ In the `scripts` directory, add a new file called `Deploy.s.sol`:
 pragma solidity ^0.8.13;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {SaysGM} from "../src/SaysGM.sol";
+import {Telegram} from "../src/Telegram.sol";
 
 contract Deploy is Script {
     function run() public {
@@ -130,14 +132,15 @@ contract Deploy is Script {
 
         address registry = 0x663F3ad617193148711d28f5334eE4Ed07016602;
         // Create consumer
-        SaysGM saysGm = new SaysGM(registry);
-        console2.log("Deployed SaysHello: ", address(saysGm));
+        Telegram telegram = new Telegram(registry, deployerAddress);
+        console2.log("Deployed SaysHello: ", address(telegram));
 
         // Execute
         vm.stopBroadcast();
         vm.broadcast();
     }
 }
+
 ```
 
 The coordinator address is the address of the Infernet coordinator. Our
@@ -152,22 +155,25 @@ Create another file under the `script` directory called `CallContract.s.sol`
 pragma solidity ^0.8.0;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {SaysGM} from "../src/SaysGM.sol";
+import {Telegram} from "../src/Telegram.sol";
 
 contract CallContract is Script {
+    string defaultMessage = "Nothing to say";
+
     function run() public {
         // Setup wallet
         uint256 deployerPrivateKey = vm.envUint("PRIVATE_KEY");
+        string memory message = vm.envOr("message", defaultMessage);
+
         vm.startBroadcast(deployerPrivateKey);
 
-        SaysGM saysGm = SaysGM(0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e);
+        Telegram telegram = Telegram(0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e);
 
-        saysGm.sayGM();
+        telegram.sayMessage(message);
 
         vm.stopBroadcast();
     }
 }
-
 ```
 
 ### Building the Project
@@ -194,7 +200,7 @@ The project should build successfully.
 **Deploy Infernet**
 
 To deploy our contracts, and later be able to call and test them, we'll need to deploy infernet, as well as
-our `hello-world` container! Refer to [the readme at the root of this project](../../README.md) for instructions on how
+our `telegram` container! Refer to [the readme at the root of this project](../../README.md) for instructions on how
 to do that.
 
 After deploying an Infernet Node locally, we'll need to run the `Deploy` script.
@@ -218,6 +224,7 @@ PRIVATE_KEY=0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a \
 ```
 
 ### Using a `Makefile`
+
 To make running these commands easier, we can add them to a `Makefile`. This allows
 us to run `make deploy` and `make call` instead of typing out the full command every time.
 
@@ -226,4 +233,4 @@ Refer to [this project's Makefile](./Makefile) for an example.
 ### 🎉 Done!
 
 Congratulations! You've successfully created a contract that requests compute from
-our `hello-world` container.
+our `telegram` container.

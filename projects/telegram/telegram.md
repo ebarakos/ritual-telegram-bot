@@ -31,12 +31,12 @@ git clone --recurse-submodules https://github.com/ritual-net/infernet-container-
 cd infernet-container-starter
 ```
 
-### Build the `hello-world` container
+### Build the `telegram` container
 
-Once inside the repository directory, you can run a simple command to build the `hello-world` container:
+Once inside the repository directory, you can run a simple command to build the `telegram` container:
 
 ```bash copy
-make build-container project=hello-world
+make build-container project=telegram
 ```
 
 ### Running Locally
@@ -44,10 +44,10 @@ make build-container project=hello-world
 Then, from the top-level project directory, Run the following make command:
 
 ```
-make deploy-container project=hello-world
+make deploy-container project=telegram
 ```
 
-This will deploy an infernet node along with the `hello-world` image.
+This will deploy an infernet node along with the `telegram` image.
 
 ### Creating an off-chain job through the API
 
@@ -56,7 +56,7 @@ You can create an off-chain job by posting to the `node` directly.
 ```bash
 curl -X POST "http://127.0.0.1:4000/api/jobs" \
      -H "Content-Type: application/json" \
-     -d '{"containers":["hello-world"], "data": {"some": "input"}}'
+     -d '{"containers":["telegram"], "data": {"message": "Off-chain message"}}'
 # returns
 {"id":"d5281dd5-c4f4-4523-a9c2-266398e06007"}
 ```
@@ -70,16 +70,16 @@ You can check the status of a job like so:
 ```bash
 curl -X GET "http://127.0.0.1:4000/api/jobs?id=d5281dd5-c4f4-4523-a9c2-266398e06007"
 # returns
-[{"id":"d5281dd5-c4f4-4523-a9c2-266398e06007", "result":{"container":"hello-world","output": {"output":"hello, world!, your input was: {'source': 1, 'data': {'some': 'input'}}"}} ,"status":"success"}]
+[{"id":"d5281dd5-c4f4-4523-a9c2-266398e06007", "result":{"container":"telegram","output": {"output":"Hello, your Telegram message was: {'source': 1, 'data': {'message': 'Off-chain message'}}"}} ,"status":"success"}]
 ```
 
 ### Configuration
 
-This project already comes with a pre-filled config file. The config file for the hello-world project is located
+This project already comes with a pre-filled config file. The config file for the telegram project is located
 [here](container/config.json):
 
 ```bash
-projects/hello-world/container/config.json
+projects/telegram/container/config.json
 ```
 
 ## Requesting an on-chain job
@@ -107,12 +107,13 @@ docker logs -f infernet-anvil
 In another terminal, run `docker container ls`, you should see something like this
 
 ```bash
-CONTAINER ID   IMAGE                                      COMMAND                  CREATED          STATUS          PORTS                                NAMES
-c2ca0ffe7817   ritualnetwork/infernet-anvil:0.0.0         "anvil --host 0.0.0.…"   9 seconds ago    Up 8 seconds    0.0.0.0:8545->3000/tcp               infernet-anvil
-0b686a6a0e5f   ritualnetwork/hello-world-infernet:0.0.2   "gunicorn app:create…"   9 seconds ago    Up 8 seconds    0.0.0.0:3000->3000/tcp               hello-world
-28b2e5608655   ritualnetwork/infernet-node:0.1.1          "/app/entrypoint.sh"     10 seconds ago   Up 10 seconds   0.0.0.0:4000->4000/tcp               deploy-node-1
-03ba51ff48b8   fluent/fluent-bit:latest                   "/fluent-bit/bin/flu…"   10 seconds ago   Up 10 seconds   2020/tcp, 0.0.0.0:24224->24224/tcp   deploy-fluentbit-1
-a0d96f29a238   redis:latest                               "docker-entrypoint.s…"   10 seconds ago   Up 10 seconds   0.0.0.0:6379->6379/tcp               deploy-redis-1
+CONTAINER ID   IMAGE                                            COMMAND                  CREATED          STATUS          PORTS                                       NAMES
+0a24afba2426   ritualnetwork/telegram-polling:latest            "/start.sh --bind=0.…"   11 minutes ago   Up 11 minutes   3001/tcp, 0.0.0.0:3001->3000/tcp            telegram-polling
+fecb3d05287a   ritualnetwork/example-telegram-infernet:latest   "/start.sh --bind=0.…"   11 minutes ago   Up 11 minutes   0.0.0.0:3000->3000/tcp                      telegram
+8891cd193e72   ritualnetwork/infernet-node:1.0.0                "/app/entrypoint.sh"     11 minutes ago   Up 11 minutes   0.0.0.0:4000->4000/tcp                      infernet-node
+71ab3112cb7c   redis:latest                                     "docker-entrypoint.s…"   11 minutes ago   Up 11 minutes   0.0.0.0:6379->6379/tcp, :::6379->6379/tcp   deploy-redis-1
+f0301578d8d4   ritualnetwork/infernet-anvil:1.0.0               "anvil --host 0.0.0.…"   11 minutes ago   Up 11 minutes   0.0.0.0:8545->3000/tcp, :::8545->3000/tcp   infernet-anvil
+8593c6c80c34   fluent/fluent-bit:latest                         "/fluent-bit/bin/flu…"   11 minutes ago   Up 11 minutes   2020/tcp, 24224/tcp                         deploy-fluentbit-1
 ```
 
 You can see that the anvil node is running on port `8545`, and the infernet
@@ -121,7 +122,7 @@ node is running on port `4000`. Same as before.
 ### Deploying Consumer Contracts
 
 We have a [sample forge project](./contracts) which contains
-a simple consumer contract, [`SaysGM`](contracts/src/SaysGM.sol).
+a simple consumer contract, [`Telegram`](contracts/src/Telegram.sol).
 All this contract does is to request a job from the infernet node, and upon receiving
 the result, it will use the `forge` console to print the result.
 
@@ -131,7 +132,7 @@ a new terminal, run `docker logs -f infernet-anvil`.
 **Deploying the contracts**: In another terminal, run the following command:
 
 ```bash
-project=hello-world make deploy-contracts
+project=telegram make deploy-contracts
 ```
 
 You should be able to see the following logs in the anvil logs:
@@ -154,17 +155,17 @@ eth_blockNumber
 ```
 
 We can see that a new contract has been created at `0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e`.
-That's the address of the `SaysGM` contract.
+That's the address of the `Telegram` contract.
 
 ### Calling the contract
 
 Now, let's call the contract. In the same terminal, run the following command:
 
 ```bash
-project=hello-world make call-contract
+project=telegram make call-contract message="Off-chain message"
 ```
 
-You should first see that a transaction was sent to the `SaysGm` contract:
+You should first see that a transaction was sent to the `Telegram` contract:
 
 ```bash
 eth_getTransactionReceipt
@@ -202,7 +203,8 @@ node 0x70997970C51812dc3A010C7d01b50e0d17dc79C8
 input:
 0x
 output:
-0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000000607b276f7574707574273a202268656c6c6f2c20776f726c64212c20796f757220696e707574207761733a207b27736f75726365273a20302c202764617461273a20273437366636663634323036643666373236653639366536373231277d227d
+0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001737b276f7574707574273a2027596f75722054656c656772616d206d657373616765207761733a205c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c783030205c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7831314f66662d636861696e206d6573736167655c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c783030277d00000000000000000000000000
+decoded output:  {'output': 'Your Telegram message was: \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11Off-chain message\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'}
 proof:
 0x
 

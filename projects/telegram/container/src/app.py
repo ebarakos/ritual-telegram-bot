@@ -1,21 +1,17 @@
-from typing import Any
-
+import logging
+import os
 import telegram
-from eth_abi import decode, encode  # type: ignore
+import random
+from typing import Any
 from infernet_ml.utils.service_models import InfernetInput, JobLocation
 from infernet_client.node import NodeClient
 from infernet_client.chain.subscription import Subscription
 from infernet_client.chain.rpc import RPC
 from quart import Quart, request
-import logging
-import os
-from dotenv import load_dotenv
-import random
 from typing import Any, cast
 from time import time
+from dotenv import load_dotenv
 load_dotenv()
-from telegram import ForceReply, Update
-from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandler, filters
 
 
 # async def get_chat_id() -> str:
@@ -29,13 +25,11 @@ from telegram.ext import Application, CommandHandler, ContextTypes, MessageHandl
 #         print('No updates found')
 #         return None
 
-
 log = logging.getLogger(__name__)
 
 TELEGRAM_TOKEN = os.getenv("TELEGRAM_TOKEN")
 ZERO_ADDRESS = "0x0000000000000000000000000000000000000000"
 CHAT_ID = os.getenv("CHAT_ID")
-
     
 def create_app() -> Quart:
     app = Quart(__name__)
@@ -52,10 +46,6 @@ def create_app() -> Quart:
     async def new_message() -> dict[str, Any]: 
         req_data = await request.get_json()
         message = req_data.get("message")
-        print(req_data)
-        async with bot:
-                    # await get_chat_id()
-                    await bot.send_message(text='received by delegated subscription '+ message, chat_id=CHAT_ID)
 
         sub = Subscription(
             owner="0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e",
@@ -80,7 +70,7 @@ def create_app() -> Quart:
             expiry=int(time() + 10),
             nonce=nonce,
             private_key="0x5de4111afa1a4b94908f83103eb1f1706367c2e68ca870fc3fb9a804cdab365a",
-            data={ "message" : "Message from chain,  " + message },
+            data={ "message" : "Delegated subscription message: " + message },
         )
        
         return {"status": "ok"}
@@ -101,12 +91,8 @@ def create_app() -> Quart:
             case InfernetInput(source=JobLocation.ONCHAIN):
                 # On-chain requests are sent as a generalized hex-string which we will
                 # decode to the appropriate format.
-             
                 bytes_data = bytes.fromhex(infernet_input.data)
                 message = bytes_data.decode('utf-8')
-                # (message,) = decode(
-                #     ["string"], bytes.fromhex(cast(str, infernet_input.data))
-                # )
             case _:
                 raise ValueError("Invalid source")
         log.info("message: %s", message)

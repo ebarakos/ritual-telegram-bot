@@ -9,6 +9,6 @@ RPC_URL := http://localhost:8545
 deploy:
 	@PRIVATE_KEY=$(sender) forge script script/Deploy.s.sol:Deploy --broadcast --rpc-url $(RPC_URL)
 
-# calling sayGM()
+# calling sayMessage()
 call-contract:
 	@PRIVATE_KEY=$(sender) forge script script/CallContract.s.sol:CallContract --broadcast --rpc-url $(RPC_URL)

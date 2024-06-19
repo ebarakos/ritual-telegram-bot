@@ -2,7 +2,7 @@
 pragma solidity ^0.8.0;
 
 import {Script, console2} from "forge-std/Script.sol";
-import {SaysGM} from "../src/SaysGM.sol";
+import {Telegram} from "../src/Telegram.sol";
 
 
 contract CallContract is Script {
@@ -15,9 +15,9 @@ contract CallContract is Script {
 
         vm.startBroadcast(deployerPrivateKey);
 
-        SaysGM saysGm = SaysGM(0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e);
+        Telegram telegram = Telegram(0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e);
 
-        saysGm.sayGM(message);
+        telegram.sayMessage(message);
 
         vm.stopBroadcast();
     }
