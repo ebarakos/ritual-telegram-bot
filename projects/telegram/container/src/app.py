@@ -40,7 +40,7 @@ CHAT_ID = os.getenv("CHAT_ID")
 def create_app() -> Quart:
     app = Quart(__name__)
     bot = telegram.Bot(TELEGRAM_TOKEN)
-    print(CHAT_ID)
+
     @app.route("/")
     def index() -> str:
         """
@@ -113,7 +113,7 @@ def create_app() -> Quart:
 
         async with bot:
             await bot.send_message(text=message, chat_id=CHAT_ID)
-
+        return {"output": f"Your Telegram message was: {message}"}
     return app  
 
 if __name__ == "__main__":
