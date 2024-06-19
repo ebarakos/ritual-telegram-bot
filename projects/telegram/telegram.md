@@ -1,15 +1,14 @@
-# Hello, World!
+# Telegram Bot
 
-Welcome to the first tutorial of Infernet! In this tutorial we will guide you through the process of setting up and
-running an Infernet Node, and then demonstrate how to create and monitor off-chain compute jobs and on-chain subscriptions.
+In this tutorial we will guide you through the process of setting up and
+running an Infernet Node and how to interact with a Telegram Bot.
 
 To interact with infernet, one could either create a job by accessing an infernet node directly through it's API (we'll
 refer to this as an off-chain job), or by creating a subscription on-chain (we'll refer to this as an on-chain job).
 
-## Requesting an off-chain job: Hello World!
+## Requesting an off-chain job
 
-This project is a simple [flask-app](container/src/app.py) that is compatible with `infernet`, and simply
-[echoes what you send to it](container/src/app.py#L16).
+This project is a Quark app that is compatible with `infernet`
 
 ### Install Docker & Verify Installation
 
@@ -31,9 +30,55 @@ git clone --recurse-submodules https://github.com/ritual-net/infernet-container-
 cd infernet-container-starter
 ```
 
+### Configure the `telegram` container
+
+#### Retrieve the Telegram Bot Token
+
+1. Go to https://telegram.me/BotFather
+
+2. Interact with the BotFather to create your bot and get the bot token
+
+#### Retrieve the Chat ID
+
+1. Send a dummy message to the bot.
+
+2. Go to following url: https://api.telegram.org/botXXX:YYYY/getUpdates
+   (replace XXX:YYYY with your bot token)
+
+3. Look for `"chat":{"id":xxxxxxxx`
+   xxxxxxxx is your chat id to be used in the config below
+
+#### Configure keys in `config.json`
+
+This is where we'll use the API key we obtained from OpenAI.
+
+```bash
+cd projects/telegram/container
+cp config.sample.json config.json
+```
+
+In the `containers` field, you will see the following in two different places. Replace both of them with the token/id you retrieved above
+
+```json
+"containers": [
+    {
+        // etc. etc.
+        "env": {
+        "TELEGRAM_TOKEN": "Telegram bot token from BotFather",
+        "CHAT_ID": "Chat ID from https://api.telegram.org/"        }
+    }
+       {
+        // etc. etc.
+        "env": {
+        "TELEGRAM_TOKEN": "Telegram bot token from BotFather",
+        "CHAT_ID": "Chat ID from https://api.telegram.org/"        }
+    }
+],
+```
+
 ### Build the `telegram` container
 
-Once inside the repository directory, you can run a simple command to build the `telegram` container:
+Inside the repository directory, you can run a simple command to build the `telegram` container:
 
 ```bash copy
 make build-container project=telegram
@@ -49,7 +94,7 @@ make deploy-container project=telegram
 
 This will deploy an infernet node along with the `telegram` image.
 
-### Creating an off-chain job through the API
+### Creating an off-chain job through the API to send a message to the Telegram Bot
 
 You can create an off-chain job by posting to the `node` directly.
 
@@ -70,16 +115,7 @@ You can check the status of a job like so:
 ```bash
 curl -X GET "http://127.0.0.1:4000/api/jobs?id=d5281dd5-c4f4-4523-a9c2-266398e06007"
 # returns
-[{"id":"d5281dd5-c4f4-4523-a9c2-266398e06007", "result":{"container":"telegram","output": {"output":"Hello, your Telegram message was: {'source': 1, 'data': {'message': 'Off-chain message'}}"}} ,"status":"success"}]
-```
-
-### Configuration
-
-This project already comes with a pre-filled config file. The config file for the telegram project is located
-[here](container/config.json):
-
-```bash
-projects/telegram/container/config.json
+[{"id":"d5281dd5-c4f4-4523-a9c2-266398e06007", "result":{"container":"telegram","output":{"output":"Your Telegram message was: Off-chain message"}},"status":"success"}]
 ```
 
 ## Requesting an on-chain job
@@ -157,12 +193,12 @@ eth_blockNumber
 We can see that a new contract has been created at `0x13D69Cf7d6CE4218F646B759Dcf334D82c023d8e`.
 That's the address of the `Telegram` contract.
 
-### Calling the contract
+### Calling the contract to send a message on the Telegram bot
 
 Now, let's call the contract. In the same terminal, run the following command:
 
 ```bash
-project=telegram make call-contract message="Off-chain message"
+project=telegram make call-contract message="On-chain message"
 ```
 
 You should first see that a transaction was sent to the `Telegram` contract:
@@ -204,7 +240,7 @@ input:
 0x
 output:
 0x000000000000000000000000000000000000000000000000000000000000002000000000000000000000000000000000000000000000000000000000000001737b276f7574707574273a2027596f75722054656c656772616d206d657373616765207761733a205c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c783030205c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7831314f66662d636861696e206d6573736167655c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c7830305c783030277d00000000000000000000000000
-decoded output:  {'output': 'Your Telegram message was: \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11Off-chain message\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'}
+decoded output:  {'output': 'Your Telegram message was: \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00 \x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x11On-chain message\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'}
 proof:
 0x
 
@@ -224,11 +260,17 @@ eth_newFilter
 We can see that the address of the `node` matches the address of the node in
 our ritual anvil node.
 
-### Next Steps
+### Perform on-chain action by sending a message directly to the Bot(Delegated Subscription)
 
-To learn more about on-chain requests, check out the following resources:
+By sending a message to the bot in Telegram, it will be picked-up by the `telegram-polling` service. This will hit the `/new_message` endpoint of the `telegram` container and perform a delegated subscription call.
 
-1. [Tutorial](contracts/Tutorial.md) on this project's consumer smart contracts.
-2. [Infernet Callback Consumer Tutorial](https://docs.ritual.net/infernet/sdk/consumers/Callback)
-3. [Infernet Nodes Docoumentation](https://docs.ritual.net/infernet/node/introduction)
-4. [Infernet-Compatible Containers](https://docs.ritual.net/infernet/node/containers)
+You can check the anvil logs, after sending a message to the bot directly. E.g "Hello!"
+
+```bash
+docker logs -f infernet-anvil
+```
+
+```output:
+0x0000000000000000000000000000000000000000000000000000000000000020000000000000000000000000000000000000000000000000000000000000004f7b276f7574707574273a2027596f75722054656c656772616d206d657373616765207761733a2044656c65676174656420737562736372697074696f6e206d6573736167653a2048656c6c6f21277d0000000000000000000000000000000000
+decoded output:  {'output': 'Your Telegram message was: Delegated subscription message: Hello!'}
+```

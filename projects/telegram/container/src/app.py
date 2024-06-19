@@ -14,16 +14,16 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
-# async def get_chat_id() -> str:
-#     global chat_id
-#     bot = telegram.Bot(TELEGRAM_TOKEN)
-#     updates = await bot.get_updates()
-#     if updates:
-#         chat_id = updates[-1].message.chat.id
-#         return chat_id
-#     else:
-#         print('No updates found')
-#         return None
+async def get_chat_id() -> str:
+    global chat_id
+    bot = telegram.Bot(TELEGRAM_TOKEN)
+    updates = await bot.get_updates()
+    if updates:
+        chat_id = updates[-1].message.chat.id
+        return chat_id
+    else:
+        print('No updates found')
+        return None
 
 log = logging.getLogger(__name__)
 
@@ -36,11 +36,17 @@ def create_app() -> Quart:
     bot = telegram.Bot(TELEGRAM_TOKEN)
 
     @app.route("/")
-    def index() -> str:
+    async def index() -> str:
         """
         Utility endpoint to check if the service is running.
         """
-        return "Telegram Bot Solidity"
+        # print("CHAT_ID:")
+        # print(await get_chat_id())
+        result = await get_chat_id()
+        # async with bot:
+        #     await bot.send_message(text=result, chat_id=result)
+
+        return {"CHAT_ID": result}
     
     @app.route("/new_message", methods=["POST"])
     async def new_message() -> dict[str, Any]: 
